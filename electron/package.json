@@ -29,7 +29,9 @@
         "from": "build/server",
         "to": "server",
         "filter": [
-          "**/*"
+          "**/*",
+          "!node_modules/**",
+          "!apps/web/.next/**"
         ]
       },
       {
