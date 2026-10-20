@@ -1,5 +1,5 @@
 import type { ShortcutKey } from "@/actions/keybinding";
-import type { TActionWithOptionalArgs } from "./types";
+import type { TActionWithArgs, TActionWithOptionalArgs } from "./types";
 
 export type TActionCategory =
 	| "playback"
@@ -207,4 +207,19 @@ export function getDefaultShortcuts(): Map<
 	}
 
 	return shortcuts;
+}
+
+// Actions whose args are required, so they can't be bound to a bare shortcut
+const ACTIONS_WITH_REQUIRED_ARGS: ReadonlySet<string> = new Set<
+	Exclude<TActionWithArgs, TActionWithOptionalArgs>
+>(["remove-media-asset", "remove-media-assets"]);
+
+export function isActionWithOptionalArgs(
+	value: unknown,
+): value is TActionWithOptionalArgs {
+	return (
+		typeof value === "string" &&
+		Object.hasOwn(ACTIONS, value) &&
+		!ACTIONS_WITH_REQUIRED_ARGS.has(value)
+	);
 }

@@ -1,0 +1,84 @@
+name: Desktop builds
+
+concurrency:
+  group: desktop-${{ github.ref }}
+  cancel-in-progress: true
+
+on:
+  workflow_dispatch:
+  push:
+    tags: ["desktop-v*"]
+
+jobs:
+  package:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            target: win
+            artifact: OpenCut-windows
+            files: |
+              electron/dist/*.exe
+          - os: macos-latest
+            target: mac
+            artifact: OpenCut-macos
+            files: |
+              electron/dist/*.dmg
+              electron/dist/*.zip
+
+    # Build-time placeholders; the desktop app supplies its own runtime env (electron/main.js)
+    env:
+      NODE_ENV: "production"
+      DATABASE_URL: "postgresql://opencut:opencut@localhost:5432/opencut"
+      BETTER_AUTH_SECRET: "build-only-placeholder-secret-0123456789"
+      NEXT_PUBLIC_SITE_URL: "http://localhost:3000"
+      UPSTASH_REDIS_REST_URL: "https://your-upstash-redis-url"
+      UPSTASH_REDIS_REST_TOKEN: "your-upstash-redis-token"
+      NEXT_PUBLIC_MARBLE_API_URL: "https://api.marblecms.com"
+      MARBLE_WORKSPACE_KEY: "placeholder"
+      FREESOUND_CLIENT_ID: "placeholder"
+      FREESOUND_API_KEY: "placeholder"
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Bun
+        uses: oven-sh/setup-bun@735343b667d3e6f658f44d0eca948eb6282f2b76
+        with:
+          bun-version: 1.2.18
+
+      - name: Install Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install web dependencies
+        run: bun install
+
+      - name: Build web app
+        working-directory: apps/web
+        run: bun run build
+
+      - name: Install desktop dependencies
+        working-directory: electron
+        run: bun install
+
+      - name: Assemble server bundle
+        working-directory: electron
+        run: bun run prepare-server
+
+      - name: Package desktop app
+        working-directory: electron
+        run: bunx electron-builder --${{ matrix.target }} --publish never
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: "false"
+
+      - name: Upload installer
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact }}
+          path: ${{ matrix.files }}
+          if-no-files-found: error

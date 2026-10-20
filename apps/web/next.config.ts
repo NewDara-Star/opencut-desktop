@@ -1,3 +1,4 @@
+import path from "node:path";
 import type { NextConfig } from "next";
 import { withBotId } from "botid/next/config";
 import { withContentCollections } from "@content-collections/next";
@@ -9,6 +10,9 @@ const nextConfig: NextConfig = {
 	reactStrictMode: true,
 	productionBrowserSourceMaps: true,
 	output: "standalone",
+	// Pin the monorepo root so stray lockfiles in parent dirs don't move it
+	outputFileTracingRoot: path.join(__dirname, "../.."),
+	turbopack: { root: path.join(__dirname, "../..") },
 	images: {
 		remotePatterns: [
 			{

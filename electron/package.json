@@ -1,0 +1,92 @@
+{
+  "name": "opencut-desktop",
+  "productName": "OpenCut",
+  "version": "0.1.0",
+  "description": "OpenCut video editor as a desktop app",
+  "license": "MIT",
+  "private": true,
+  "main": "main.js",
+  "scripts": {
+    "build:web": "cd ../apps/web && bun run build",
+    "prepare-server": "node prepare-server.mjs",
+    "start": "electron .",
+    "dist:mac": "bun run build:web && bun run prepare-server && electron-builder --mac",
+    "dist:win": "bun run build:web && bun run prepare-server && electron-builder --win"
+  },
+  "build": {
+    "appId": "app.opencut.desktop",
+    "productName": "OpenCut",
+    "directories": {
+      "output": "dist",
+      "buildResources": "resources"
+    },
+    "files": [
+      "main.js",
+      "package.json"
+    ],
+    "extraResources": [
+      {
+        "from": "build/server",
+        "to": "server",
+        "filter": [
+          "**/*"
+        ]
+      },
+      {
+        "from": "build/server/node_modules",
+        "to": "server/node_modules",
+        "filter": [
+          "**/*"
+        ]
+      },
+      {
+        "from": "build/server/apps/web/.next",
+        "to": "server/apps/web/.next",
+        "filter": [
+          "**/*"
+        ]
+      }
+    ],
+    "asar": true,
+    "npmRebuild": false,
+    "mac": {
+      "category": "public.app-category.video",
+      "icon": "resources/icon.png",
+      "target": [
+        {
+          "target": "dmg",
+          "arch": [
+            "arm64"
+          ]
+        },
+        {
+          "target": "zip",
+          "arch": [
+            "arm64"
+          ]
+        }
+      ],
+      "identity": null
+    },
+    "win": {
+      "icon": "resources/icon.png",
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true
+    },
+    "afterPack": "after-pack.cjs"
+  },
+  "devDependencies": {
+    "electron": "37.2.0",
+    "electron-builder": "26.0.12"
+  }
+}
